@@ -1,522 +1,288 @@
-:root {
-  --uber-black: #0d0d0d;
-  --uber-elevated: #171717;
-  --uber-surface: #f4f4f4;
-  --uber-border: #e7e7e7;
-  --uber-muted: #6d6d6d;
-  --uber-green: #06c167;
-  --uber-green-dark: #038a4d;
-  --uber-shadow: 0 20px 50px rgba(17, 17, 17, 0.12);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html, body, #root {
-  margin: 0;
-  min-height: 100%;
-  font-family: Inter, 'Segoe UI', sans-serif;
-  background: #f1f1f1;
-  color: #111111;
-}
-
-body {
-  min-height: 100vh;
-}
-
-button, input, select {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
-.uber-shell {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 32px 24px 40px;
-}
-
-.uber-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, #111111 0%, #1b1b1b 100%);
-  color: white;
-  border-radius: 26px;
-  padding: 20px 24px;
-  box-shadow: var(--uber-shadow);
-}
-
-.brand-wrap {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.brand-mark {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: var(--uber-green);
-  color: #0c0c0c;
-  font-weight: 900;
-  font-size: 1.5rem;
-}
-
-.eyebrow {
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
-}
-
-.uber-topbar h1 {
-  margin: 2px 0 0;
-  font-size: 1.5rem;
-  letter-spacing: 0.04em;
-}
-
-.mode-toggle {
-  display: inline-flex;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
-  padding: 6px;
-  gap: 8px;
-}
-
-.mode-toggle button {
-  border: 0;
-  background: transparent;
-  color: white;
-  border-radius: 999px;
-  padding: 10px 18px;
-  font-weight: 600;
-}
-
-.mode-toggle button.active {
-  background: white;
-  color: #111111;
-}
-
-.uber-layout {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 24px;
-  margin-top: 24px;
-}
-
-.panel {
-  background: #ffffff;
-  border-radius: 26px;
-  box-shadow: var(--uber-shadow);
-  border: 1px solid var(--uber-border);
-}
-
-.main-panel {
-  padding: 24px;
-}
-
-.map-panel {
-  padding: 18px 18px 20px;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.panel-header h2 {
-  margin: 4px 0 0;
-  font-size: 2rem;
-  letter-spacing: -0.04em;
-}
-
-.ghost-button {
-  border: 1px solid var(--uber-border);
-  background: white;
-  color: #111111;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-weight: 600;
-}
-
-.user-login-box,
-.driver-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: #333333;
-}
-
-input,
-select {
-  border: 1px solid var(--uber-border);
-  background: #f7f7f7;
-  border-radius: 12px;
-  padding: 12px 14px;
-  font-size: 0.98rem;
-  color: #111111;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-input:focus,
-select:focus {
-  outline: none;
-  border-color: var(--uber-green);
-  box-shadow: 0 0 0 3px rgba(6, 193, 103, 0.15);
-}
-
-.primary-button {
-  border: 0;
-  background: linear-gradient(180deg, var(--uber-green) 0%, var(--uber-green-dark) 100%);
-  color: white;
-  border-radius: 14px;
-  min-height: 52px;
-  padding: 0 18px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  margin-top: 18px;
-  width: 100%;
-}
-
-.route-box {
-  margin-top: 22px;
-  background: #f7f7f7;
-  border: 1px solid var(--uber-border);
-  border-radius: 18px;
-  padding: 10px 12px;
-}
-
-.route-input {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 4px;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.green-dot {
-  background: var(--uber-green);
-}
-
-.red-dot {
-  background: #e53935;
-}
-
-.route-input input {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font-size: 1rem;
-}
-
-.route-divider {
-  height: 1px;
-  background: var(--uber-border);
-  margin: 2px 0;
-}
-
-.ride-options {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 22px;
-}
+import { useMemo, useState } from 'react';
+import { MapPanel } from './components/MapPanel';
+import { mockDriver, mockTrip } from './data/mockData';
+import { calculateFare } from './lib/fare';
+
+const rideTypes = {
+  micro: { label: 'UberX', eta: '3 min', note: 'Affordable ride' },
+  comfort: { label: 'Comfort', eta: '4 min', note: 'Extra comfort' },
+  premium: { label: 'Black', eta: '6 min', note: 'Premium ride' },
+  xl: { label: 'XL', eta: '7 min', note: 'More space' }
+};
+
+function App() {
+  const [mode, setMode] = useState('passenger');
+  const [requestState, setRequestState] = useState('idle');
+
+  const [passengerForm, setPassengerForm] = useState({
+    name: 'Sita Gurung',
+    phone: '+977-9812345678',
+    email: 'sita@example.com',
+    password: '********'
+  });
+
+  const [driverForm, setDriverForm] = useState({
+    name: 'Ramesh KC',
+    phone: '+977-9800000000',
+    email: 'ramesh@example.com',
+    license: 'DL-2024-7841',
+    citizenship: 'CIT-22-4450',
+    password: '********'
+  });
+
+  const [trip, setTrip] = useState({
+    pickup: 'Current location',
+    destination: 'Thamel, Kathmandu',
+    rideType: 'comfort',
+    distance: 7.4,
+    duration: 18
+  });
+
+  const fare = useMemo(
+    () => calculateFare(trip.distance, trip.duration, trip.rideType),
+    [trip.distance, trip.duration, trip.rideType]
+  );
+
+  const handlePassengerChange = (event) => {
+    const { name, value } = event.target;
+    setPassengerForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleDriverChange = (event) => {
+    const { name, value } = event.target;
+    setDriverForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleTripChange = (event) => {
+    const { name, value } = event.target;
+    setTrip((current) => ({ ...current, [name]: value }));
+  };
+
+  const requestRide = () => {
+    setRequestState('finding');
+    setTimeout(() => setRequestState('matched'), 1500);
+  };
+
+  const isPassenger = mode === 'passenger';
+
+  return (
+    <div className="uber-shell">
+      <header className="uber-topbar">
+        <div className="brand-wrap">
+          <div className="brand-mark">U</div>
+          <div>
+            <p className="eyebrow">Ride-hailing platform</p>
+            <h1>RYDO</h1>
+          </div>
+        </div>
+
+        <nav className="mode-toggle" aria-label="User role switcher">
+          <button
+            className={isPassenger ? 'active' : ''}
+            type="button"
+            onClick={() => setMode('passenger')}
+          >
+            Rider
+          </button>
+          <button
+            className={!isPassenger ? 'active' : ''}
+            type="button"
+            onClick={() => setMode('driver')}
+          >
+            Driver
+          </button>
+        </nav>
+      </header>
+
+      <main className="uber-layout">
+        <section className="panel main-panel">
+          {isPassenger ? (
+            <>
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Welcome back</p>
+                  <h2>Book a ride</h2>
+                </div>
+                <button type="button" className="ghost-button">
+                  Create account
+                </button>
+              </div>
+
+              <div className="user-login-box">
+                <label>
+                  Full name
+                  <input name="name" value={passengerForm.name} onChange={handlePassengerChange} />
+                </label>
+                <label>
+                  Phone
+                  <input name="phone" value={passengerForm.phone} onChange={handlePassengerChange} />
+                </label>
+                <label>
+                  Email
+                  <input type="email" name="email" value={passengerForm.email} onChange={handlePassengerChange} />
+                </label>
+                <label>
+                  Password
+                  <input type="password" name="password" value={passengerForm.password} onChange={handlePassengerChange} />
+                </label>
+              </div>
+
+              <button type="button" className="primary-button">
+                Sign in
+              </button>
+
+              <div className="route-box">
+                <div className="route-input pickup-row">
+                  <span className="dot green-dot" />
+                  <input name="pickup" value={trip.pickup} onChange={handleTripChange} />
+                </div>
+                <div className="route-divider" />
+                <div className="route-input">
+                  <span className="dot red-dot" />
+                  <input name="destination" value={trip.destination} onChange={handleTripChange} />
+                </div>
+              </div>
+
+              <div className="ride-options">
+                {Object.entries(rideTypes).map(([key, item]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={trip.rideType === key ? 'ride-card active' : 'ride-card'}
+                    onClick={() => setTrip((current) => ({ ...current, rideType: key }))}
+                  >
+                    <div>
+                      <strong>{item.label}</strong>
+                      <small>{item.note}</small>
+                    </div>
+                    <div className="ride-meta">
+                      <span>{item.eta}</span>
+                      <strong>NRs {calculateFare(trip.distance, trip.duration, key).toFixed(0)}</strong>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="fare-summary">
+                <div>
+                  <small>Estimated total</small>
+                  <strong>NRs {fare.toFixed(2)}</strong>
+                </div>
+                <button type="button" className="primary-button request-button" onClick={requestRide}>
+                  {requestState === 'matched' ? 'Ride matched' : requestState === 'finding' ? 'Finding driver...' : 'Request ride'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Drive with us</p>
+                  <h2>Become a driver</h2>
+                </div>
+                <button type="button" className="ghost-button">
+                  Register
+                </button>
+              </div>
+
+              <div className="driver-form">
+                <label>
+                  Driver name
+                  <input name="name" value={driverForm.name} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Phone
+                  <input name="phone" value={driverForm.phone} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Email
+                  <input type="email" name="email" value={driverForm.email} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  License number
+                  <input name="license" value={driverForm.license} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Citizenship number
+                  <input name="citizenship" value={driverForm.citizenship} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Password
+                  <input type="password" name="password" value={driverForm.password} onChange={handleDriverChange} />
+                </label>
+              </div>
+
+              <div className="document-box">
+                <span>Driver documents</span>
+                <input type="file" multiple />
+              </div>
+
+              <button type="button" className="primary-button">
+                Verify profile
+              </button>
+            </>
+          )}
+        </section>
+
+        <aside className="panel map-panel">
+          <div className="map-head">
+            <div>
+              <p className="eyebrow">Live trip</p>
+              <h3>
+                {trip.pickup} → {trip.destination}
+              </h3>
+            </div>
+            <span className="status-badge">
+              {requestState === 'matched' ? 'Driver arrived' : 'Driver nearby'}
+            </span>
+          </div>
+
+          <MapPanel pickup={trip.pickup} destination={trip.destination} rideType={trip.rideType} />
+
+          <div className="driver-card">
+            <div className="avatar">RK</div>
+            <div className="driver-meta">
+              <strong>{mockDriver.name}</strong>
+              <p>{mockDriver.vehicle}</p>
+            </div>
+            <span className="rating">{mockDriver.rating} ★</span>
+          </div>
+
+          <div className="trip-stat-grid">
+            <div>
+              <small>Distance</small>
+              <strong>{mockTrip.distance} km</strong>
+            </div>
+            <div>
+              <small>ETA</small>
+              <strong>{mockTrip.eta} min</strong>
+            </div>
+            <div>
+              <small>Fare</small>
+              <strong>NRs {fare.toFixed(2)}</strong>
+            </div>
+          </div>
+
+          <div className="trip-progress">
+            <div className="progress-row">
+              <span className="progress-dot done" />
+              <span>Ride requested</span>
+            </div>
+            <div className="progress-row">
+              <span className="progress-dot active" />
+              <span>Driver assigned</span>
+            </div>
+            <div className="progress-row">
+              <span className="progress-dot" />
+              <span>Trip complete</span>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+  );
+}
+
+export default App;
 
-.ride-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  border: 1px solid var(--uber-border);
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 14px 16px;
-  text-align: left;
-}
-
-.ride-card strong,
-.ride-card span {
-  display: block;
-}
-
-.ride-card small {
-  display: block;
-  color: var(--uber-muted);
-  margin-top: 4px;
-}
-
-.ride-card.active {
-  border-color: rgba(6, 193, 103, 0.4);
-  background: rgba(6, 193, 103, 0.06);
-  box-shadow: inset 0 0 0 1px rgba(6, 193, 103, 0.18);
-}
-
-.fare-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid var(--uber-border);
-}
-
-.fare-summary small {
-  display: block;
-  color: var(--uber-muted);
-}
-
-.fare-summary strong {
-  display: block;
-  font-size: 1.5rem;
-  letter-spacing: -0.04em;
-}
-
-.fare-summary .primary-button {
-  width: auto;
-  min-width: 180px;
-  margin-top: 0;
-}
-
-.document-box {
-  margin-top: 18px;
-  background: #f7f7f7;
-  border: 1px solid var(--uber-border);
-  border-radius: 14px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-weight: 600;
-}
-
-.map-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 14px;
-}
-
-.map-head h3 {
-  margin: 4px 0 0;
-  font-size: 1.18rem;
-  letter-spacing: -0.03em;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 10px;
-  background: rgba(6, 193, 103, 0.12);
-  color: var(--uber-green-dark);
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.75rem;
-}
-
-.map-canvas,
-.map-fallback {
-  width: 100%;
-  height: 360px;
-  border-radius: 20px;
-  background: #e9e9e9;
-  overflow: hidden;
-  position: relative;
-  border: 1px solid var(--uber-border);
-}
-
-.map-fallback {
-  background: linear-gradient(180deg, #eef2f0 0%, #dfe9e5 100%);
-}
-
-.map-grid {
-  position: absolute;
-  inset: 0;
-  background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-.pin {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 3px solid white;
-  box-shadow: 0 10px 18px rgba(0,0,0,0.18);
-}
-
-.pickup-pin {
-  background: var(--uber-green);
-  left: 30%;
-  top: 38%;
-}
-
-.destination-pin {
-  background: #ef4444;
-  right: 20%;
-  top: 50%;
-}
 
-.route-line {
-  position: absolute;
-  left: 36%;
-  top: 45%;
-  width: 38%;
-  height: 2px;
-  background: linear-gradient(90deg, var(--uber-green), #ef4444);
-  transform: rotate(-14deg);
-}
-
-.map-label {
-  position: absolute;
-  background: rgba(255,255,255,0.9);
-  color: #111111;
-  border-radius: 999px;
-  padding: 7px 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  box-shadow: 0 12px 16px rgba(17,17,17,0.08);
-}
-
-.pickup-label {
-  left: 18%;
-  top: 18%;
-}
-
-.destination-label {
-  right: 12%;
-  bottom: 18%;
-}
-
-.driver-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 16px;
-  background: #f8f8f8;
-  border: 1px solid var(--uber-border);
-  border-radius: 18px;
-  padding: 14px 16px;
-}
-
-.avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #111111 0%, #2a2a2a 100%);
-  color: white;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-}
-
-.driver-meta {
-  flex: 1;
-}
-
-.driver-meta strong {
-  display: block;
-  margin-bottom: 3px;
-}
-
-.driver-meta p {
-  margin: 0;
-  color: var(--uber-muted);
-  font-size: 0.82rem;
-}
-
-.rating {
-  background: rgba(6, 193, 103, 0.12);
-  color: var(--uber-green-dark);
-  font-weight: 700;
-  padding: 8px 10px;
-  border-radius: 999px;
-}
-
-.trip-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.trip-stat-grid > div {
-  background: #f9f9f9;
-  border: 1px solid var(--uber-border);
-  border-radius: 14px;
-  padding: 12px 10px;
-}
-
-.trip-stat-grid small {
-  display: block;
-  color: var(--uber-muted);
-  margin-bottom: 5px;
-}
-
-.trip-stat-grid strong {
-  font-size: 1rem;
-}
-
-@media (max-width: 980px) {
-  .uber-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .uber-shell {
-    padding: 18px 14px 28px;
-  }
-
-  .uber-topbar,
-  .panel-header,
-  .fare-summary {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .user-login-box,
-  .driver-form,
-  .ride-options,
-  .trip-stat-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .mode-toggle {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .mode-toggle button {
-    flex: 1;
-  }
-}
