@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ryde</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:16px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;color:#0f1720;background:#e6ecf0}
+[hidden]{display:none!important}
+#map{position:absolute;inset:0}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:62%;overflow:auto;box-shadow:0 -4px 18px rgba(0,0,0,.18);z-index:1000}
+.grab{width:38px;height:4px;border-radius:2px;background:#e3e8ee;margin:0 auto 12px}
+h1,h2{letter-spacing:-.02em;margin:0 0 10px}h2{font-size:21px}
+.sub{color:#6b7785;font-size:14px}
+.search{width:100%;border:0;background:#f2f5f8;border-radius:12px;padding:14px;font:inherit;font-weight:600;margin:4px 0 8px}
+.place{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid #e3e8ee;padding:11px 0;font:inherit;cursor:pointer;color:inherit}
+.place b{display:block}
+.ride{display:flex;align-items:center;gap:12px;width:100%;border:2px solid transparent;background:none;border-radius:14px;padding:12px 10px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ride.sel{border-color:#0f1720;background:#f2f5f8}.ride:disabled{opacity:.45}
+.ride b{display:block}.ride .p{margin-left:auto;font-weight:800}
+.btn{width:100%;border:0;border-radius:14px;padding:15px;background:#0f1720;color:#fff;font:inherit;font-weight:800;font-size:17px;cursor:pointer;margin-top:8px}
+.btn.alt{background:#f2f5f8;color:#0f1720;font-size:15px;padding:12px}
+button:focus-visible,input:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+.drv{display:flex;align-items:center;gap:12px;margin:10px 0}
+.av{width:52px;height:52px;border-radius:50%;background:#2563eb;color:#fff;display:grid;place-items:center;font-weight:800;font-size:19px;flex:none}
+.plate{margin-left:auto}.plate span{border:2px solid #0f1720;border-radius:6px;padding:2px 8px;font-weight:800;letter-spacing:.06em}
+.big{font-size:28px;font-weight:800;letter-spacing:-.03em}
+.pin{display:flex;justify-content:space-between;align-items:center;background:#f2f5f8;border-radius:12px;padding:12px 14px;font-size:14px}
+.pin b{font-size:22px;letter-spacing:.2em}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#12805c;margin-right:6px}
+.stars{display:flex;justify-content:center;gap:4px;margin:8px 0}
+.stars button{background:none;border:0;font-size:36px;color:#d5dce4;cursor:pointer}.stars .on{color:#f5b301}
+.tips{display:flex;gap:8px}.tips button{flex:1;padding:10px;border-radius:12px;border:2px solid #e3e8ee;background:none;font:inherit;font-weight:700;cursor:pointer}.tips .on{border-color:#0f1720}
+.spin{width:30px;height:30px;border:4px solid #e3e8ee;border-top-color:#0f1720;border-radius:50%;animation:s 1s linear infinite;margin:14px auto}
+@keyframes s{to{transform:rotate(360deg)}}
+.center{text-align:center}
+#toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#0f1720;color:#fff;padding:10px 16px;border-radius:12px;z-index:2000;max-width:90%}
+#auth{max-width:380px;margin:0 auto;padding:40px 20px}
+#auth input{width:100%;padding:14px;margin:6px 0;border:1px solid #cbd5de;border-radius:12px;font:inherit}
+.tabs{display:flex;gap:8px;margin:12px 0}.tabs button{flex:1;padding:10px;border:0;border-radius:10px;background:#fff;font:inherit;font-weight:700;cursor:pointer}.tabs .on{background:#0f1720;color:#fff}
+#err{color:#c0392b;min-height:1.3em;font-size:14px}
+.dest{background:#0f1720;border:3px solid #fff;border-radius:3px}.car{font-size:26px;line-height:28px;text-align:center}
+</style>
+</head>
+<body>
+<div id="auth" hidden>
+  <form id="af">
+    <h1>Ryde</h1>
+    <div class="tabs"><button type="button" id="tl" class="on">Log in</button><button type="button" id="tr">Sign up</button></div>
+    <input id="name" placeholder="Full name" autocomplete="name" hidden>
+    <input id="phone" placeholder="Phone number" type="tel" autocomplete="tel" hidden>
+    <input id="email" type="email" placeholder="Email" required autocomplete="email">
+    <input id="pw" type="password" placeholder="Password (8+ characters)" required minlength="8" autocomplete="current-password">
+    <p id="err" role="alert"></p>
+    <button class="btn">Continue</button>
+  </form>
+</div>
+<div id="app" hidden><div id="map"></div><div id="sheet"></div></div>
+<div id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=localStorage.getItem('token'),me,socket,map,base,dMarker,pickup,dest,est,sel='economy',trip=null,results=[],rate=0,tipv=0,st,mode='login';
+
+const api=async(p,m='GET',b)=>{
+  const r=await fetch('/api'+p,{method:m,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:b?JSON.stringify(b):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&token)logout();
+  if(!r.ok)throw new Error(j.error||'Request failed');
+  return j;
+};
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3500)}
+function logout(){localStorage.removeItem('token');location.reload()}
+const hav=(a,b)=>{const t=x=>x*Math.PI/180,h=Math.sin(t(b.lat-a.lat)/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(t(b.lng-a.lng)/2)**2;return 2*6371*Math.asin(Math.sqrt(h))};
+
+// ---------- auth ----------
+function setMode(m){mode=m;$('#tl').classList.toggle('on',m==='login');$('#tr').classList.toggle('on',m==='register');
+  $('#name').hidden=$('#phone').hidden=m==='login';$('#name').required=m==='register'}
+$('#tl').onclick=()=>setMode('login');$('#tr').onclick=()=>setMode('register');
+$('#af').onsubmit=async e=>{
+  e.preventDefault();$('#err').textContent='';
+  try{
+    const body={email:$('#email').value,password:$('#pw').value};
+    if(mode==='register')Object.assign(body,{role:'rider',name:$('#name').value,phone:$('#phone').value});
+    const j=await api('/auth/'+mode,'POST',body);
+    if(j.user.role!=='rider')throw new Error('This is a driver account. Open driver.html instead.');
+    token=j.token;localStorage.setItem('token',token);boot();
+  }catch(err){$('#err').textContent=err.message}
+};
+
+async function boot(){
+  if(!token){$('#auth').hidden=false;return}
+  try{me=(await api('/auth/me')).user;if(me.role!=='rider')throw 0}catch{return logout()}
+  $('#auth').hidden=true;$('#app').hidden=false;
+  initMap();connect();locate();
+  const {trip:t}=await api('/trips/active');
+  if(t)setTrip(t,true);else render();
+}
+
+// ---------- map ----------
+function initMap(){
+  if(map)return;
+  map=L.map('map',{zoomControl:false}).setView([20,0],2);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+  base=L.layerGroup().addTo(map);
+}
+function drawMap(fit){
+  base.clearLayers();
+  const P=trip?{lat:trip.pickup_lat,lng:trip.pickup_lng}:pickup,D=trip?{lat:trip.drop_lat,lng:trip.drop_lng}:dest;
+  const rt=trip?trip.route:est?.route.coords;
+  if(P)L.circleMarker([P.lat,P.lng],{radius:8,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).addTo(base);
+  if(D)L.marker([D.lat,D.lng],{icon:L.divIcon({className:'dest',iconSize:[16,16]})}).addTo(base);
+  if(rt){const l=L.polyline(rt,{color:'#0f1720',weight:5}).addTo(base);
+    if(fit)map.fitBounds(l.getBounds(),{paddingTopLeft:[30,30],paddingBottomRight:[30,330]})}
+}
+function locate(){
+  if(!navigator.geolocation)return toast('This device has no location support');
+  navigator.geolocation.getCurrentPosition(async p=>{
+    pickup={lat:p.coords.latitude,lng:p.coords.longitude,addr:'Current location'};
+    if(!trip)map.setView([pickup.lat,pickup.lng],15);
+    drawMap();
+    try{const r=await(await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${pickup.lat}&lon=${pickup.lng}`)).json();
+      pickup.addr=(r.display_name||'').split(',').slice(0,2).join(',')||pickup.addr}catch{}
+    if(!trip&&!est)render();
+  },()=>toast('Allow location access to request a ride'),{enableHighAccuracy:true,timeout:15000});
+}
+
+// ---------- realtime ----------
+function connect(){
+  socket=io({auth:{token}});
+  socket.on('trip:update',t=>setTrip(t));
+  socket.on('trip:driver_location',p=>{
+    if(!trip||p.trip_id!==trip.id)return;
+    const ll=[p.lat,p.lng];
+    if(!dMarker)dMarker=L.marker(ll,{icon:L.divIcon({className:'car',html:'🚗',iconSize:[28,28]})}).addTo(map);
+    else dMarker.setLatLng(ll);
+    const tgt=trip.status==='in_progress'?{lat:trip.drop_lat,lng:trip.drop_lng}:{lat:trip.pickup_lat,lng:trip.pickup_lng};
+    const m=Math.max(1,Math.round(hav({lat:p.lat,lng:p.lng},tgt)*1.3/25*60)),el=$('#eta');
+    if(el)el.textContent=(trip.status==='in_progress'?'Arriving in ':'Driver arrives in ')+m+' min';
+  });
+  socket.on('connect_error',e=>{if(e.message==='unauthorized')logout()});
+}
+
+// ---------- trip state ----------
+function setTrip(t,fit){
+  if(t.status==='cancelled'){
+    toast(t.cancel_reason==='no_drivers'?'No drivers available nearby. Please try again soon.':'Trip cancelled');
+    return clearTrip();
+  }
+  if(t.status==='completed'&&(!trip||trip.status!=='completed')){rate=0;tipv=0;if(dMarker){dMarker.remove();dMarker=null}}
+  const first=!trip;trip=t;drawMap(fit||first);render();
+}
+function clearTrip(){trip=null;dest=null;est=null;results=[];if(dMarker){dMarker.remove();dMarker=null}drawMap();render()}
+
+async function chooseDest(i){
+  const r=results[i];if(!r)return;
+  if(!pickup)return toast('Still finding your location…');
+  dest={lat:+r.lat,lng:+r.lon,addr:r.display_name.split(',').slice(0,2).join(',')};
+  try{
+    est=await api('/trips/estimate','POST',{pickup:{lat:pickup.lat,lng:pickup.lng},dropoff:{lat:dest.lat,lng:dest.lng}});
+    sel=(est.classes.find(c=>c.eta_min!=null)||est.classes[0]).id;
+    drawMap(true);render();
+  }catch(e){dest=null;toast(e.message)}
+}
+async function request(){
+  try{
+    setTrip(await api('/trips','POST',{pickup:{lat:pickup.lat,lng:pickup.lng},dropoff:{lat:dest.lat,lng:dest.lng},
+      pickup_addr:pickup.addr,drop_addr:dest.addr,ride_class:sel}),true);
+  }catch(e){toast(e.message)}
+}
+async function cancelTrip(){try{await api(`/trips/${trip.id}/cancel`,'POST')}catch(e){toast(e.message)}}
+async function sendRating(){
+  if(!rate)return toast('Choose a star rating first');
+  try{await api(`/trips/${trip.id}/rate`,'POST',{rating:rate,tip:tipv});clearTrip()}catch(e){toast(e.message)}
+}
+
+// ---------- search ----------
+function onSearch(v){
+  clearTimeout(st);
+  if(v.trim().length<3){results=[];return list()}
+  st=setTimeout(async()=>{
+    try{results=await(await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&q='+encodeURIComponent(v))).json();list()}
+    catch{toast('Search failed. Check your connection.')}
+  },700);
+}
+function list(){
+  const el=$('#res');if(!el)return;
+  el.innerHTML=results.map((r,i)=>{const p=r.display_name.split(',');
+    return `<button class="place" onclick="chooseDest(${i})"><b>${esc(p[0])}</b><span class="sub">${esc(p.slice(1,4).join(','))}</span></button>`}).join('');
+}
+
+// ---------- UI ----------
+function render(){
+  let h='<div class="grab"></div>';
+  if(!trip&&!est){
+    h+=`<h2>Where to?</h2><input id="q" class="search" placeholder="Search destination" oninput="onSearch(this.value)" autocomplete="off">
+    <div class="sub">Pickup: ${esc(pickup?pickup.addr:'locating you…')}</div><div id="res"></div>
+    <button class="btn alt" onclick="logout()">Log out (${esc(me.name)})</button>`;
+  }else if(!trip){
+    h+=`<h2>Choose a ride</h2><div class="sub">${esc(dest.addr)} · ${est.route.km.toFixed(1)} km</div>`;
+    h+=est.classes.map(c=>`<button class="ride ${c.id===sel?'sel':''}" ${c.eta_min==null?'disabled':''} onclick="sel='${c.id}';render()">
+      <span><b>${c.label} · ${c.seats} seats</b><span class="sub">${c.eta_min==null?'No drivers nearby':c.eta_min+' min away'}</span></span>
+      <span class="p">$${c.fare.toFixed(2)}</span></button>`).join('');
+    const ok=est.classes.find(c=>c.id===sel&&c.eta_min!=null);
+    h+=`<button class="btn" ${ok?'':'disabled'} onclick="request()">Request ${esc(est.classes.find(c=>c.id===sel).label)}</button>
+        <button class="btn alt" onclick="clearTrip()">Back</button>`;
+  }else if(trip.status==='requested'){
+    h+=`<div class="center"><h2>Finding your driver…</h2><div class="sub">Contacting nearby drivers</div><div class="spin"></div></div>
+        <button class="btn alt" onclick="cancelTrip()">Cancel request</button>`;
+  }else if(trip.status==='completed'){
+    h+=`<div class="center"><h2>You've arrived</h2><div class="big">$${Number(trip.fare_final).toFixed(2)}</div>
+    <div class="sub">Rate ${esc(trip.driver_name)}</div>
+    <div class="stars" role="group" aria-label="Rating">${[1,2,3,4,5].map(n=>`<button class="${n<=rate?'on':''}" aria-label="${n} stars" onclick="rate=${n};render()">★</button>`).join('')}</div>
+    <div class="tips">${[0,1,2,5].map(n=>`<button class="${tipv===n?'on':''}" onclick="tipv=${n};render()">${n?'$'+n+' tip':'No tip'}</button>`).join('')}</div>
+    <button class="btn" onclick="sendRating()">Submit</button><button class="btn alt" onclick="clearTrip()">Skip</button></div>`;
+  }else{
+    const t=trip,title={accepted:'Driver is on the way',arrived:'Your driver has arrived',in_progress:'On your way'}[t.status];
+    h+=`<div class="sub"><span class="dot"></span>${title}</div><div class="big" id="eta">&nbsp;</div>
+    <div class="drv"><div class="av">${esc((t.driver_name||'?')[0])}</div>
+      <div><b>${esc(t.driver_name)}</b><div class="sub">★ ${Number(t.driver_rating).toFixed(1)} · ${esc(t.car_model)}</div></div>
+      <div class="plate"><span>${esc(t.plate)}</span></div></div>`;
+    if(t.status==='in_progress')h+=`<div class="sub">To ${esc(t.drop_addr)} · $${Number(t.fare_estimate).toFixed(2)}</div>`;
+    else h+=`<div class="pin"><span>Give your driver this PIN</span><b>${esc(t.pin)}</b></div>
+             <button class="btn alt" onclick="cancelTrip()">Cancel trip</button>`;
+  }
+  $('#sheet').innerHTML=h;list();
+}
+setMode('login');boot();
+</script>
+</body>
+                       </html>
