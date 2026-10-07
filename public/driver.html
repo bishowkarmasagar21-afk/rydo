@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ryde Driver</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font:16px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;color:#0f1720;background:#e6ecf0}
+[hidden]{display:none!important}
+#map{position:absolute;inset:0}
+#top{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:10px;right:10px;max-width:440px;margin:0 auto;z-index:1000;background:#fff;border-radius:14px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+.pill{border:0;border-radius:20px;padding:8px 16px;font:inherit;font-weight:800;background:#d5dce4;cursor:pointer}.pill.on{background:#12805c;color:#fff}.pill:disabled{opacity:.5}
+#sheet{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:60%;overflow:auto;box-shadow:0 -4px 18px rgba(0,0,0,.18);z-index:1000}
+.grab{width:38px;height:4px;border-radius:2px;background:#e3e8ee;margin:0 auto 12px}
+h1,h2{letter-spacing:-.02em;margin:0 0 8px}h2{font-size:21px}
+.sub{color:#6b7785;font-size:14px}.big{font-size:30px;font-weight:800;letter-spacing:-.03em}
+.btn{width:100%;border:0;border-radius:14px;padding:15px;background:#0f1720;color:#fff;font:inherit;font-weight:800;font-size:17px;cursor:pointer;margin-top:8px;display:block;text-align:center;text-decoration:none}
+.btn.alt{background:#f2f5f8;color:#0f1720;font-size:15px;padding:12px}
+.acts{display:flex;gap:8px}.acts .btn{margin-top:8px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #2563eb;outline-offset:2px}
+input,select{width:100%;padding:14px;margin:6px 0;border:1px solid #cbd5de;border-radius:12px;font:inherit;background:#fff}
+#pin{font-size:26px;letter-spacing:.4em;text-align:center}
+#auth{max-width:380px;margin:0 auto;padding:40px 20px}
+.tabs{display:flex;gap:8px;margin:12px 0}.tabs button{flex:1;padding:10px;border:0;border-radius:10px;background:#fff;font:inherit;font-weight:700;cursor:pointer}.tabs .on{background:#0f1720;color:#fff}
+#err{color:#c0392b;min-height:1.3em;font-size:14px}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#0f1720;color:#fff;padding:10px 16px;border-radius:12px;z-index:2000;max-width:90%}
+.dest{background:#0f1720;border:3px solid #fff;border-radius:3px}
+</style>
+</head>
+<body>
+<div id="auth" hidden>
+  <form id="af">
+    <h1>Ryde Driver</h1>
+    <div class="tabs"><button type="button" id="tl" class="on">Log in</button><button type="button" id="tr">Sign up</button></div>
+    <div id="reg" hidden>
+      <input id="name" placeholder="Full name" autocomplete="name">
+      <input id="phone" placeholder="Phone number" type="tel">
+      <input id="car" placeholder="Car make and model">
+      <input id="plate" placeholder="License plate">
+      <select id="cls" aria-label="Car class"><option value="economy">Economy</option><option value="comfort">Comfort</option><option value="xl">XL (5+ passengers)</option></select>
+    </div>
+    <input id="email" type="email" placeholder="Email" required autocomplete="email">
+    <input id="pw" type="password" placeholder="Password (8+ characters)" required minlength="8">
+    <p id="err" role="alert"></p>
+    <button class="btn">Continue</button>
+  </form>
+</div>
+<div id="app" hidden><div id="map"></div><div id="top"></div><div id="sheet"></div></div>
+<div id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=localStorage.getItem('token'),me,socket,map,base,meM,online=false,lastPos,watch,offer=null,offerT,trip=null,mode='login',fitted=false;
+
+const api=async(p,m='GET',b)=>{
+  const r=await fetch('/api'+p,{method:m,headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:b?JSON.stringify(b):undefined});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401&&token)logout();
+  if(!r.ok)throw new Error(j.error||'Request failed');
+  return j;
+};
+function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3500)}
+function logout(){localStorage.removeItem('token');location.reload()}
+
+// ---------- auth ----------
+function setMode(m){mode=m;$('#tl').classList.toggle('on',m==='login');$('#tr').classList.toggle('on',m==='register');$('#reg').hidden=m==='login'}
+$('#tl').onclick=()=>setMode('login');$('#tr').onclick=()=>setMode('register');
+$('#af').onsubmit=async e=>{
+  e.preventDefault();$('#err').textContent='';
+  try{
+    const body={email:$('#email').value,password:$('#pw').value};
+    if(mode==='register')Object.assign(body,{role:'driver',name:$('#name').value,phone:$('#phone').value,car_model:$('#car').value,plate:$('#plate').value,car_class:$('#cls').value});
+    const j=await api('/auth/'+mode,'POST',body);
+    if(j.user.role!=='driver')throw new Error('This is a rider account. Open passenger.html instead.');
+    token=j.token;localStorage.setItem('token',token);boot();
+  }catch(err){$('#err').textContent=err.message}
+};
+
+async function boot(){
+  if(!token){$('#auth').hidden=false;return}
+  try{me=(await api('/auth/me')).user;if(me.role!=='driver')throw 0}catch{return logout()}
+  $('#auth').hidden=true;$('#app').hidden=false;
+  map=L.map('map',{zoomControl:false}).setView([20,0],2);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+  base=L.layerGroup().addTo(map);
+  connect();
+  setInterval(()=>{if(online&&lastPos&&socket.connected)socket.emit('driver:location',lastPos)},4000);
+  const {trip:t}=await api('/trips/active');
+  if(t){trip=t;online=true;socket.emit('driver:online');startGPS();drawMap(true)}
+  render();
+}
+
+// ---------- realtime ----------
+function connect(){
+  socket=io({auth:{token}});
+  socket.on('connect',()=>{if(online)socket.emit('driver:online')});
+  socket.on('connect_error',e=>{if(e.message==='unauthorized')logout()});
+  socket.on('trip:offer',o=>{
+    offer={...o,left:o.expires_in};clearInterval(offerT);
+    offerT=setInterval(()=>{if(!offer)return clearInterval(offerT);offer.left--;
+      if(offer.left<=0){offer=null;clearInterval(offerT);render()}else{const c=$('#cd');if(c)c.textContent=offer.left}},1000);
+    if(navigator.vibrate)navigator.vibrate([200,100,200]);
+    render();
+  });
+  socket.on('trip:offer_cancelled',()=>{offer=null;render();toast('Request was cancelled')});
+  socket.on('trip:update',t=>{
+    if(t.status==='cancelled'){toast('The rider cancelled this trip');trip=null;drawMap();return render()}
+    const first=!trip;trip=t;offer=null;drawMap(first);render();
+  });
+}
+function startGPS(){
+  if(watch!=null||!navigator.geolocation)return;
+  watch=navigator.geolocation.watchPosition(p=>{
+    const first=!lastPos;
+    lastPos={lat:p.coords.latitude,lng:p.coords.longitude,heading:p.coords.heading||0};
+    if(!meM)meM=L.circleMarker([lastPos.lat,lastPos.lng],{radius:9,color:'#fff',weight:3,fillColor:'#2563eb',fillOpacity:1}).addTo(map);
+    else meM.setLatLng([lastPos.lat,lastPos.lng]);
+    if(first){map.setView([lastPos.lat,lastPos.lng],15);if(online)socket.emit('driver:location',lastPos)}
+  },()=>toast('Allow location access to receive rides'),{enableHighAccuracy:true,maximumAge:2000});
+}
+function toggle(){
+  online=!online;
+  socket.emit(online?'driver:online':'driver:offline');
+  if(online)startGPS();
+  render();
+}
+
+// ---------- trip actions ----------
+async function act(p,b){try{await api(`/trips/${trip.id}/${p}`,'POST',b)}catch(e){toast(e.message)}}
+async function accept(){const id=offer.trip.id;offer=null;clearInterval(offerT);render();try{await api(`/trips/${id}/accept`,'POST')}catch(e){toast(e.message)}}
+async function decline(){const id=offer.trip.id;offer=null;clearInterval(offerT);render();api(`/trips/${id}/decline`,'POST').catch(()=>{})}
+function done(){trip=null;drawMap();render()}
+
+function drawMap(fit){
+  base.clearLayers();
+  if(!trip||trip.status==='completed')return;
+  L.circleMarker([trip.pickup_lat,trip.pickup_lng],{radius:8,color:'#fff',weight:3,fillColor:'#12805c',fillOpacity:1}).addTo(base);
+  L.marker([trip.drop_lat,trip.drop_lng],{icon:L.divIcon({className:'dest',iconSize:[16,16]})}).addTo(base);
+  if(trip.route){const l=L.polyline(trip.route,{color:'#0f1720',weight:5}).addTo(base);
+    if(fit)map.fitBounds(l.getBounds(),{paddingTopLeft:[30,80],paddingBottomRight:[30,300]})}
+}
+const nav=(lat,lng)=>`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+function render(){
+  $('#top').innerHTML=`<b>${esc(me.name)}</b><button class="pill ${online?'on':''}" onclick="toggle()" ${trip?'disabled':''}>${online?'Online':'Offline'}</button>`;
+  let h='<div class="grab"></div>';
+  if(offer){
+    const t=offer.trip;
+    h+=`<div class="sub">New request · ${offer.pickup_km.toFixed(1)} km away</div><div class="big">$${Number(t.fare_estimate).toFixed(2)}</div>
+    <p><b>${esc(t.pickup_addr)}</b><br>to ${esc(t.drop_addr)}</p><div class="sub">${Number(t.distance_km).toFixed(1)} km · ${Math.round(t.duration_min)} min · ${esc(t.rider_name)}</div>
+    <div class="acts"><button class="btn alt" onclick="decline()">Decline</button><button class="btn" onclick="accept()">Accept (<span id="cd">${offer.left}</span>)</button></div>`;
+  }else if(trip){
+    const t=trip;
+    if(t.status==='accepted')h+=`<h2>Pick up ${esc(t.rider_name)}</h2><p>${esc(t.pickup_addr)}</p>
+      <a class="btn alt" target="_blank" rel="noopener" href="${nav(t.pickup_lat,t.pickup_lng)}">Navigate to pickup</a>
+      <button class="btn" onclick="act('arrived')">I've arrived</button>`;
+    if(t.status==='arrived')h+=`<h2>Waiting for ${esc(t.rider_name)}</h2><div class="sub">Ask the rider for their 4-digit PIN</div>
+      <input id="pin" inputmode="numeric" maxlength="4" placeholder="····" aria-label="Rider PIN">
+      <button class="btn" onclick="act('start',{pin:$('#pin').value})">Start trip</button>`;
+    if(t.status==='in_progress')h+=`<h2>Heading to destination</h2><p>${esc(t.drop_addr)}</p>
+      <a class="btn alt" target="_blank" rel="noopener" href="${nav(t.drop_lat,t.drop_lng)}">Navigate to destination</a>
+      <button class="btn" onclick="act('complete')">Complete trip</button>`;
+    if(t.status==='completed')h+=`<h2>Trip complete</h2><div class="big">$${Number(t.fare_final).toFixed(2)}</div><div class="sub">Fare for this trip</div>
+      <button class="btn" onclick="done()">Done</button>`;
+  }else h+=online?`<h2>You're online</h2><div class="sub">Waiting for ride requests…</div>`
+                 :`<h2>You're offline</h2><div class="sub">Go online to start receiving requests.</div>`;
+  $('#sheet').innerHTML=h;
+}
+setMode('login');boot();
+</script>
+</body>
+  </html>
