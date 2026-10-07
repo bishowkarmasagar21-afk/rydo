@@ -1,0 +1,249 @@
+import { useMemo, useState } from 'react';
+import { MapPanel } from './components/MapPanel';
+import { mockDriver, mockTrip } from './data/mockData';
+import { calculateFare } from './lib/fare';
+
+const rideTypes = {
+  micro: { label: 'UberX', price: 200 },
+  comfort: { label: 'Comfort', price: 280 },
+  premium: { label: 'Black', price: 420 },
+  xl: { label: 'XL', price: 500 }
+};
+
+function App() {
+  const [mode, setMode] = useState('passenger');
+
+  const [passengerForm, setPassengerForm] = useState({
+    name: 'Sita Gurung',
+    phone: '+977-9812345678',
+    email: 'sita@example.com',
+    password: '********'
+  });
+
+  const [driverForm, setDriverForm] = useState({
+    name: 'Ramesh KC',
+    phone: '+977-9800000000',
+    email: 'ramesh@example.com',
+    license: 'DL-2024-7841',
+    citizenship: 'CIT-22-4450',
+    password: '********'
+  });
+
+  const [trip, setTrip] = useState({
+    pickup: 'Current location',
+    destination: 'Thamel, Kathmandu',
+    rideType: 'comfort',
+    distance: 7.4,
+    duration: 18
+  });
+
+  const fare = useMemo(
+    () => calculateFare(trip.distance, trip.duration, trip.rideType),
+    [trip.distance, trip.duration, trip.rideType]
+  );
+
+  const handlePassengerChange = (event) => {
+    const { name, value } = event.target;
+    setPassengerForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleDriverChange = (event) => {
+    const { name, value } = event.target;
+    setDriverForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleTripChange = (event) => {
+    const { name, value } = event.target;
+    setTrip((current) => ({ ...current, [name]: value }));
+  };
+
+  const isPassenger = mode === 'passenger';
+
+  return (
+    <div className="uber-shell">
+      <header className="uber-topbar">
+        <div className="brand-wrap">
+          <div className="brand-mark">U</div>
+          <div>
+            <p className="eyebrow">Ride-hailing</p>
+            <h1>Uber-style</h1>
+          </div>
+        </div>
+
+        <nav className="mode-toggle" aria-label="User role switcher">
+          <button
+            className={isPassenger ? 'active' : ''}
+            type="button"
+            onClick={() => setMode('passenger')}
+          >
+            Rider
+          </button>
+          <button
+            className={!isPassenger ? 'active' : ''}
+            type="button"
+            onClick={() => setMode('driver')}
+          >
+            Driver
+          </button>
+        </nav>
+      </header>
+
+      <main className="uber-layout">
+        <section className="panel main-panel">
+          {isPassenger ? (
+            <>
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Welcome back</p>
+                  <h2>Book a ride</h2>
+                </div>
+                <button type="button" className="ghost-button">Create account</button>
+              </div>
+
+              <div className="user-login-box">
+                <label>
+                  Full name
+                  <input name="name" value={passengerForm.name} onChange={handlePassengerChange} />
+                </label>
+                <label>
+                  Phone
+                  <input name="phone" value={passengerForm.phone} onChange={handlePassengerChange} />
+                </label>
+                <label>
+                  Email
+                  <input type="email" name="email" value={passengerForm.email} onChange={handlePassengerChange} />
+                </label>
+                <label>
+                  Password
+                  <input type="password" name="password" value={passengerForm.password} onChange={handlePassengerChange} />
+                </label>
+              </div>
+
+              <button type="button" className="primary-button">Sign in</button>
+
+              <div className="route-box">
+                <div className="route-input pickup-row">
+                  <span className="dot green-dot" />
+                  <input name="pickup" value={trip.pickup} onChange={handleTripChange} />
+                </div>
+                <div className="route-divider" />
+                <div className="route-input">
+                  <span className="dot red-dot" />
+                  <input name="destination" value={trip.destination} onChange={handleTripChange} />
+                </div>
+              </div>
+
+              <div className="ride-options">
+                {Object.entries(rideTypes).map(([key, item]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={trip.rideType === key ? 'ride-card active' : 'ride-card'}
+                    onClick={() => setTrip((current) => ({ ...current, rideType: key }))}
+                  >
+                    <div>
+                      <strong>{item.label}</strong>
+                      <small>Fast ride</small>
+                    </div>
+                    <span>NRs {calculateFare(trip.distance, trip.duration, key).toFixed(0)}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="fare-summary">
+                <div>
+                  <small>Estimated total</small>
+                  <strong>NRs {fare.toFixed(2)}</strong>
+                </div>
+                <button type="button" className="primary-button">Request ride</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="panel-header">
+                <div>
+                  <p className="eyebrow">Drive with us</p>
+                  <h2>Become a driver</h2>
+                </div>
+                <button type="button" className="ghost-button">Register</button>
+              </div>
+
+              <div className="driver-form">
+                <label>
+                  Driver name
+                  <input name="name" value={driverForm.name} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Phone
+                  <input name="phone" value={driverForm.phone} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Email
+                  <input type="email" name="email" value={driverForm.email} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  License number
+                  <input name="license" value={driverForm.license} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Citizenship number
+                  <input name="citizenship" value={driverForm.citizenship} onChange={handleDriverChange} />
+                </label>
+                <label>
+                  Password
+                  <input type="password" name="password" value={driverForm.password} onChange={handleDriverChange} />
+                </label>
+              </div>
+
+              <div className="document-box">
+                <span>Driver documents</span>
+                <input type="file" multiple />
+              </div>
+
+              <button type="button" className="primary-button">Verify profile</button>
+            </>
+          )}
+        </section>
+
+        <aside className="panel map-panel">
+          <div className="map-head">
+            <div>
+              <p className="eyebrow">Live trip</p>
+              <h3>{trip.pickup} → {trip.destination}</h3>
+            </div>
+            <span className="status-badge">Driver nearby</span>
+          </div>
+
+          <MapPanel pickup={trip.pickup} destination={trip.destination} rideType={trip.rideType} />
+
+          <div className="driver-card">
+            <div className="avatar">RK</div>
+            <div className="driver-meta">
+              <strong>{mockDriver.name}</strong>
+              <p>{mockDriver.vehicle}</p>
+            </div>
+            <span className="rating">{mockDriver.rating} ★</span>
+          </div>
+
+          <div className="trip-stat-grid">
+            <div>
+              <small>Distance</small>
+              <strong>{mockTrip.distance} km</strong>
+            </div>
+            <div>
+              <small>ETA</small>
+              <strong>{mockTrip.eta} min</strong>
+            </div>
+            <div>
+              <small>Fare</small>
+              <strong>NRs {fare.toFixed(2)}</strong>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+  );
+}
+
+export default App;
+

@@ -1,35 +1,33 @@
 # RYDO
 
-RYDO is a ride-hailing platform for passengers and drivers.
+RYDO is a ride-hailing platform inspired by Uber-style UX for passengers and drivers.
 
-## Features
+## Included
 
-- Passenger registration and login
-- Driver registration and verification
-- Ride booking with pickup and destination search
-- Automatic fare estimation
-- Live driver tracking view
-- Mapbox integration ready
+- Passenger login and create-account flow
+- Driver registration and verification form
+- Ride booking form with pickup and destination inputs
+- Auto fare calculation logic
+- Live map area and real-time trip card
+- Uber-inspired interface styling
 
-## Quick start
+## Local setup
 
-1. Install dependencies:
+1. Install dependencies
 
    npm install
 
-2. Copy environment file:
+2. Add your Mapbox token
 
    cp .env.example .env
 
-3. Add your Mapbox public token in `.env`.
-
-4. Run app:
+3. Run the app
 
    npm run dev
 
-## Project structure
+## Stack
 
-- `src/App.jsx` – main app UI
-- `src/components/MapPanel.jsx` – map panel with Mapbox support
-- `src/lib/fare.js` – pricing logic
-- `src/data/mockData.js` – sample trip and driver data
+- React + Vite
+- Mapbox-ready map panel
+- Vanilla fare logic
+- Clean, production-style UI structure
