@@ -1,0 +1,63 @@
+import { useEffect, useRef, useState } from 'react';
+import mapboxgl from 'mapbox-gl';
+
+export function MapPanel({ pickup, destination, rideType }) {
+  const mapContainer = useRef(null);
+  const [hasToken, setHasToken] = useState(false);
+
+  useEffect(() => {
+    const token = import.meta.env.VITE_MAPBOX_TOKEN;
+    setHasToken(Boolean(token && token !== 'your_mapbox_public_token_here'));
+  }, []);
+
+  useEffect(() => {
+    if (!hasToken || !mapContainer.current) {
+      return;
+    }
+
+    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+    const map = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [85.324, 27.7172],
+      zoom: 12
+    });
+
+    const pickupMarker = new mapboxgl.Marker({ color: '#22c55e' })
+      .setLngLat([85.324, 27.7172])
+      .addTo(map);
+
+    const destinationMarker = new mapboxgl.Marker({ color: '#ef4444' })
+      .setLngLat([85.333, 27.708])
+      .addTo(map);
+
+    const route = new mapboxgl.LngLatBounds(
+      [85.324, 27.7172],
+      [85.333, 27.708]
+    );
+
+    map.fitBounds(route, { padding: 24 });
+
+    return () => {
+      pickupMarker.remove();
+      destinationMarker.remove();
+      map.remove();
+    };
+  }, [hasToken, pickup, destination, rideType]);
+
+  if (!hasToken) {
+    return (
+      <div className="map-fallback" aria-label="Map preview">
+        <div className="map-grid" />
+        <div className="pin pickup-pin" />
+        <div className="pin destination-pin" />
+        <div className="route-line" />
+        <div className="map-label pickup-label">{pickup}</div>
+        <div className="map-label destination-label">{destination}</div>
+      </div>
+    );
+  }
+
+  return <div ref={mapContainer} className="map-canvas" aria-label="Mapbox map" />;
+}

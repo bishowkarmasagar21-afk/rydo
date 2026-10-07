@@ -1,0 +1,14 @@
+export function calculateFare(distanceKm, durationMinutes, rideType) {
+  const baseRates = {
+    micro: 150,
+    comfort: 220,
+    premium: 320,
+    xl: 420
+  };
+
+  const distanceRate = distanceKm * 40;
+  const timeRate = durationMinutes * 5;
+  const base = baseRates[rideType] || baseRates.comfort;
+
+  return base + distanceRate + timeRate;
+}

@@ -1,0 +1,10 @@
+export const mockTrip = {
+  distance: '7.4',
+  eta: '18'
+};
+
+export const mockDriver = {
+  name: 'Ramesh KC',
+  vehicle: 'Tata Sumo · White',
+  rating: 4.8
+};
